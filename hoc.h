@@ -6,7 +6,7 @@ typedef struct Symbol { /* entrada en la tabla de símbolos */
    union {
       double  val;           /* VAR */
       double  (*ptr)(double);      /* BLTIN */
-      void    (*defn)(void);     /* FUNCIÓN, PROCEDIMIENTO */
+      Inst    *defn;             /* FUNCIÓN, PROCEDIMIENTO */
       char    *str;         /* CADENA */
    } u;
    struct Symbol   *next;  /* para ligar a otro */
@@ -34,5 +34,6 @@ extern    void prexpr(void), prstr(void);
 extern    void gt(void), lt(void), eq(void), ge(void), le(void), ne(void), and(void), or(void), not(void);
 extern    void ifcode(void), whilecode(void), call(void), arg(void), argassign(void);
 extern    void funcret(void), procret(void);
-
 void execerror(char *s, char *t);
+int moreinput(void);
+void execute(Inst *p);

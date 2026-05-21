@@ -1,8 +1,21 @@
 %{
 #include "hoc.h"
-#include<string.h>
+#include <string.h>
+#include <stdio.h>
+
 #define code2(c1,c2)     code(c1); code(c2)
-#define  code3(c1 ,c2,c3)   code(c1);   code(c2); code(c3)
+#define code3(c1,c2,c3)  code(c1); code(c2); code(c3)
+
+extern int indef;
+void defnonly(char *s);
+void yyerror(char *s);
+int yylex(void);
+/* Prototipos agregados para resolver advertencias */
+int backslash(int c);
+int follow(int expect, int ifyes, int ifno);
+void run(void);
+void warning(char *s, char *t);
+void define(Symbol *sp);
 %}
 %union {
 Symbol     *sym;      /*   Apuntador a la tabla de símbolos */
@@ -38,7 +51,7 @@ list:            /* nada */
 asgn: VAR '=' expr { //puts("VAR = expr ###");
               code3(varpush,(Inst)$1, assign); $$=$3; }
    |  ARG '=' expr
-{ defnonly("$"); code2(argassign,(Inst)$1); $$=$3;}
+{ defnonly("$"); code2(argassign, (Inst)(long)$1); $$=$3; }
    ;
 stmt:     expr  { code(pop1); }
    | RETURN { defnonly("return"); code(procret); } 
@@ -46,7 +59,7 @@ stmt:     expr  { code(pop1); }
           { defnonly( "return" ); $$ = $2; code(funcret) ; } 
      //   $1      $2   $3   $4     $5
    | PROCEDURE begin '(' arglist ')'
-          { $$ = $2; code3(call, (Inst)$1, (Inst)$4); } 
+          { $$ = $2; code3(call, (Inst)$1, (Inst)(long)$4); }
    | PRINT prlist  { $$ = $2; }
    | while cond stmt end {
            ($1)[1] = (Inst)$3;     /* cuerpo del ciclo */
@@ -76,10 +89,10 @@ stmtlist: /* nada */        { $$ = progp; }
    ;
 expr:  NUMBER {   $$ = code2(constpush, (Inst)$1); }
    |   VAR    {   $$ = code3(varpush, (Inst)$1, eval); }
-   |   ARG    {   defnonly("$"); $$ = code2(arg, (Inst)$1); }
+   |   ARG    { defnonly("$"); $$ = code2(arg, (Inst)(long)$1); }
    |   asgn
    | FUNCTION begin '(' arglist ')'
-           { $$ = $2; code3(call,(Inst)$1,(Inst)$4); }  
+           { $$ = $2; code3(call, (Inst)$1, (Inst)(long)$4); }  
    | READ '(' VAR ')' { $$ = code2(varread, (Inst)$3); }  
    | BLTIN '(' expr ')' { $$=$3; code2(bltin, (Inst)$1->u.ptr); }  
    | '(' expr ')'  { $$ = $2; }
@@ -142,6 +155,7 @@ FILE    *fin;         /* apuntador a archivo de entrada */
 char   **gargv;       /* lista global de argumentos */ 
 int    gargc; 
 int c;  /* global, para uso de warning() */
+char *emalloc(unsigned n);
 
 int yylex(void){
 while  ((c=getc(fin)) ==  ' ' ||  c ==   '\t')
@@ -156,7 +170,7 @@ if (c == '.' || isdigit(c)) {   /* número */
 	yylval.sym = install("", NUMBER, d);
 	return NUMBER; 
 }
-if (isalpha(c)) {//ID 
+if (isalpha(c) || c == '_') {//ID
 	Symbol *s;
 	char sbuf[100], *p = sbuf; 
 	do {
@@ -166,7 +180,7 @@ if (isalpha(c)) {//ID
 		}
 	*p++ = c;
         //putchar(c);
-	} while ((c=getc(fin)) != EOF && isalnum(c)); 
+	} while ((c=getc(fin)) != EOF && (isalnum(c) || c == '_'));
 	ungetc(c, fin); 
 	*p = '\0'; 
         
@@ -187,7 +201,7 @@ if (c == '$') { /* ¿argumento? */
 	return ARG;
 }
 if (c == '"') { /* cadena entre comillas */ 
-	char sbuf[100], *p, *emalloc(); 
+	char sbuf[100], *p;
 	for (p = sbuf; (c=getc(fin)) != '"'; p++) { 
 		if (c == '\n' || c == EOF)
 			execerror("missing quote", ""); 
@@ -215,7 +229,6 @@ if (c == '"') { /* cadena entre comillas */
         }
 }
 int backslash(int   c ){/*tomar siguiente carácter con las \ interpretadas   */
-   char *strchr( ) ;  /* strchr() en algunos sistemas */
    static char transtab[] = "b\bf\fn\nr\rt\t";
    if (c != '\\')
 	return c;
@@ -224,7 +237,7 @@ int backslash(int   c ){/*tomar siguiente carácter con las \ interpretadas   */
 	return strchr(transtab, c)[1];
    return c; 
 }
-int follow(expect, ifyes, ifno){ /* búsqueda hacia adelante para > -, etc. */ 
+int follow(int expect, int ifyes, int ifno){ /* búsqueda hacia adelante para > -, etc. */
    int c = getc(fin);
    if (c == expect)
 	return ifyes;
@@ -240,7 +253,7 @@ void yyerror(char *s)      /* comunicar errores de tiempo de compilación */
 {
 warning(s, (char *)0); 
 } 
-execerror(char *s, char *t) /* recuperación de errores de tiempo de ejecución */
+void execerror(char *s, char *t) /* recuperación de errores de tiempo de ejecución */
 {
 warning(s, t);
 fseek( fin, 0L, 2);       /* sacar el resto del archivo */
@@ -254,6 +267,7 @@ execerror("floating point exception", (char *) 0);
 
 void init(void);
 void initcode(void);
+void define(Symbol *sp);
 int main(int argc, char **argv){  /* hoc6 */ 
    int i;
    void fpecatch();
