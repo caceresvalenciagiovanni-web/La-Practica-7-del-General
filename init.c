@@ -2,7 +2,7 @@
 #include "y.tab.h"
 #include <math.h>
 
-extern double   Log(), Log10(), Sqrt(), Exp( ) , integer ( ) ;
+extern double   Log(double), Log10(double), Sqrt(double), Exp(double) , integer(double) ;
 
 static struct { 
 char   *name;	/* Palabras clave */
@@ -44,7 +44,7 @@ double	(*func)(double);
 0,	0
 };
 
-init( )  /* instalar constantes y predefinidos en la tabla */
+void init(void)  /* instalar constantes y predefinidos en la tabla */
 {
 int i;
 Symbol *s;

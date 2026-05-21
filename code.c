@@ -92,7 +92,7 @@ Symbol  *sp  =   (Symbol *)pc[0];   /*   entrada en tabla da simbolos  */
 if   (fp++   >=  &frame[NFRAME-1])
 execerror(sp->name,   "call  nested too deeply");
    fp->sp = sp;
-   fp->nargs =   (int)pc[1];// *(pc+1)
+   fp->nargs =   (int)(long)pc[1];
    fp->retpc = pc  + 2;
    fp->argn  =  stackp  -   1;     /*   último argumento   */
    execute(sp->u.defn);
@@ -124,7 +124,7 @@ void procret( ){
 }
 
 double *getarg( ) {
-int narg = (int) *pc++;
+int narg = (int)(long)*pc++;
 if (narg > fp->nargs)
 	execerror(fp-> sp->name, "not enough arguments");
 return &fp->argn[narg - fp->nargs].val; 
@@ -146,7 +146,7 @@ push(d);       /* dejar valor en la pila */
 void bltin() {
 Datum d;
 d = pop();
-d.val =  (*(double  (*)())*pc++)(d.val);
+d.val =  (*(double (*)(double))*pc++)(d.val);
 push(d);
 }
 
@@ -263,7 +263,7 @@ push(d);
 }
 void power(){
 Datum d1, d2;
-extern double Pow();
+extern double Pow(double, double);
 d2 = pop();
 d1 = pop();
 d1.val = Pow(d1.val, d2.val);

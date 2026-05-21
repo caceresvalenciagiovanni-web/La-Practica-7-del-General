@@ -2,7 +2,7 @@
 #include "hoc.h"
 #include<string.h>
 #define code2(c1,c2)     code(c1); code(c2)
-#define code3(c1,c2,c3)  code(c1); code(c2); code(c3)
+#define  code3(c1 ,c2,c3)   code(c1);   code(c2); code(c3)
 %}
 %union {
 Symbol     *sym;      /*   Apuntador a la tabla de símbolos */
@@ -143,7 +143,7 @@ char   **gargv;       /* lista global de argumentos */
 int    gargc; 
 int c;  /* global, para uso de warning() */
 
-int yylex(){
+int yylex(void){
 while  ((c=getc(fin)) ==  ' ' ||  c ==   '\t')
           ;
 if (c == EOF)
@@ -252,7 +252,9 @@ void fpecatch()      /* detectar errores por punto flotante */
 execerror("floating point exception", (char *) 0); 
 }		
 
-void main(int argc, char **argv){  /* hoc6 */ 
+void init(void);
+void initcode(void);
+int main(int argc, char **argv){  /* hoc6 */ 
    int i;
    void fpecatch();
 progname = argv[0];
