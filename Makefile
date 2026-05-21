@@ -7,5 +7,5 @@ all: $(Gram)
 $(Gram): hoc6.y
 	@yacc -d hoc6.y
 clean:
-	@rm -f *.out  *.tab.* com
+	@rm -f *.out *.tab.* com hoc yacc.acts yacc.tmp
 	@echo Clean
