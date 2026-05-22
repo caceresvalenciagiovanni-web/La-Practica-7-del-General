@@ -1,7 +1,7 @@
 #include <math.h>
 #include <errno.h>
 #include "hoc.h"
-
+extern Vector *creaVector(int n);
 extern int errno;
 void execerror(char *s, char *t);
 

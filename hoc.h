@@ -15,7 +15,7 @@ typedef struct Symbol { /* entrada en la tabla de símbolos */
    short  type;
    union {
       Vector  *val;              /* VAR */
-      double  (*ptr)(double);    /* BLTIN */
+      Vector  *(*ptr)(Vector *); /* BLTIN */
       Inst    *defn;             /* FUNCIÓN, PROCEDIMIENTO */
       char    *str;              /* CADENA */
    } u;

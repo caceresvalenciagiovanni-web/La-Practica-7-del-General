@@ -33,7 +33,7 @@ Symbol *install(char *s, int t, Vector *v)
     sp->type = t;
     
     /* CAMBIO CLAVE: Guardamos el puntero al vector en la unión u */
-    sp->u.vec = v;
+    sp->u.val = v;
     
     /* Ponemos el nuevo símbolo al frente de la lista ligada */
     sp->next = symlist;

@@ -2,6 +2,7 @@
 #include "y.tab.h" 
 #include <stdio.h> 
 
+extern Vector *creaVector(int n);
 /* Importamos los envoltorios vectoriales */
 extern Vector *Sin(), *Cos(), *Atan(), *Log(), *Log10(), *Exp(), *Sqrt(), *Integer(), *Abs();
 
