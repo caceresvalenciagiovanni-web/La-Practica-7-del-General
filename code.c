@@ -1,7 +1,9 @@
 #include "hoc.h"
 #include "y.tab.h"
 #include <stdio.h>
+#include <stdlib.h>
 #define NSTACK  256
+extern Vector *creaVector(int n); /* Prototipo del motor vectorial */
 static Datum stack[NSTACK];    /* la pila */
 static Datum *stackp;          /* siguiente sitio libre en la pila */
 #define NPROG  2000
@@ -20,6 +22,13 @@ int    nargs;     /* número da argumentos */
 Frame  frame[NFRAME] ;
 Frame   *fp;  /* apuntador a nivel */
 void execute(Inst *p);
+Vector *copy_vector(Vector *v) {
+    Vector *nuevo = creaVector(v->n);
+    for (int i = 0; i < v->n; i++) {
+        nuevo->vec[i] = v->vec[i];
+    }
+    return nuevo;
+}
 void initcode() {
    progp = progbase;
    stackp = stack;
@@ -108,19 +117,42 @@ void ret( ) {
    returning = 1; 
 }
 
-void funcret(){
-Datum d;
-if (fp->sp->type == PROCEDURE)
-execerror(fp->sp->name, "(proc) returns value");
-d = pop();      /* conservar el valor de retorno de la función */
-ret();
-push(d); 
+void funcret(void) {
+    Datum d;
+    if (fp->sp->type == PROCEDURE)
+        execerror(fp->sp->name, "(proc) returns value");
+    
+    d = pop(); /* Salvar el vector de retorno */
+    pc = (Inst *)fp->retpc;
+    
+    /* BARRIDO DE MEMORIA: Destruir los argumentos del Frame */
+    for (int i = 1; i <= fp->nargs; i++) {
+        Vector *v = fp->argn[i - fp->nargs].val;
+        free(v->vec);
+        free(v);
+    }
+    
+    stackp = fp->argn + 1 - fp->nargs; /* Limpiar la pila de la máquina */
+    --fp; /* Destruir contexto */
+    
+    push(d); /* Colocar el vector de retorno en la pila limpia */
 }
 
-void procret( ){
-   if   (fp->sp->type  ==  FUNCTION)
-      execerror(fp->sp->name, "(func) returns no value"); 
-   ret(); 
+void procret(void) {
+    if (fp->sp->type == FUNCTION)
+        execerror(fp->sp->name, "(func) returns no value");
+    
+    pc = (Inst *)fp->retpc;
+    
+    /* BARRIDO DE MEMORIA: Destruir los argumentos del Frame */
+    for (int i = 1; i <= fp->nargs; i++) {
+        Vector *v = fp->argn[i - fp->nargs].val;
+        free(v->vec);
+        free(v);
+    }
+    
+    stackp = fp->argn + 1 - fp->nargs;
+    --fp;
 }
 
 double *getarg( ) {
@@ -130,17 +162,36 @@ if (narg > fp->nargs)
 return &fp->argn[narg - fp->nargs].val; 
 }
 
-void arg( ) {
-Datum d;
-d.val = *getarg();
-push(d); 
+void arg(void) {
+    Datum d;
+    int n = (int)(long)*pc++;
+    if (n > fp->nargs)
+        execerror(fp->sp->name, "not enough arguments");
+    
+    /* Extrae el vector original y crea una copia profunda para la pila */
+    Vector *vector_original = fp->argn[n - fp->nargs].val;
+    d.val = copy_vector(vector_original);
+    
+    push(d);
 }
 
-void argassign() {
-Datum d;
-d =pop();
-push(d);       /* dejar valor en la pila */
-*getarg() = d.val; 
+void argassign(void) {
+    Datum d;
+    int n = (int)(long)*pc++;
+    if (n > fp->nargs)
+        execerror(fp->sp->name, "not enough arguments");
+    
+    d = pop(); /* Obtiene el nuevo vector a asignar */
+    
+    /* 1. Liberar el vector viejo */
+    Vector *vector_viejo = fp->argn[n - fp->nargs].val;
+    free(vector_viejo->vec);
+    free(vector_viejo);
+    
+    /* 2. Asignar una copia del nuevo vector */
+    fp->argn[n - fp->nargs].val = copy_vector(d.val);
+    
+    push(d); /* Reinserta el valor, ya que la asignación es una expresión */
 }
 
 void bltin() {

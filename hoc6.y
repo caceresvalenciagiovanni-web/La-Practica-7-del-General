@@ -23,10 +23,11 @@ Inst       *inst;     /*   instrucción de máquina */
 int        narg;      /*   número de argumentos */
 }
 
-%token     <sym>   NUMBER STRING PRINT VAR BLTIN UNDEF WHILE IF ELSE
 %token     <sym>   FUNCTION PROCEDURE RETURN FUNC PROC READ
 %token     <narg>  ARG
-%type      <inst>  expr stmt asgn prlist stmtlist
+%token     <sym>   NUMBER STRING PRINT VAR BLTIN UNDEF WHILE IF ELSE FOR
+%type      <inst>  expr stmt asgn prlist stmtlist for forexpr
+%type      <narg>  vector_elements
 %type      <inst>  cond while if begin end
 %type      <sym>   procname
 %type      <narg>  arglist
@@ -35,7 +36,7 @@ int        narg;      /*   número de argumentos */
 %left       AND
 %left       GT GE LT LE EQ NE
 %left       '+' '-'
-%left       '*' '/'
+%left       '*' '/' '@' 'X'
 %left       UNARYMINUS NOT
 %right      '^'
 %%
@@ -72,8 +73,19 @@ stmt:     expr  { code(pop1); }
            ($1)[2] = (Inst)$6;     /* parte else */
            ($1)[3] = (Inst)$7; } /* fin, si la condición no se cumple */ 
    | '{' stmtlist '}'     { $$ = $2; }
+   | FOR '(' forexpr ';' forexpr ';' forexpr ')' stmt end {
+              ($1)[1] = (Inst)$3;  /* Inicialización */
+              ($1)[2] = (Inst)$5;  /* Condición */
+              ($1)[3] = (Inst)$7;  /* Incremento */
+              ($1)[4] = (Inst)$9;  /* Cuerpo del ciclo */
+              ($1)[5] = (Inst)$10; /* Dirección de salida */
+     } 
    ;
 cond: '(' expr ')'     {  code(STOP);   $$ =  $2;   }
+   ;
+for:    FOR { $$ = code(forcode); code(STOP); code(STOP); code(STOP); code(STOP); code(STOP); } 
+   ;
+forexpr:  expr { code(STOP); $$ = $1; } | asgn { code(STOP); $$ = $1; } 
    ;
 while:  WHILE { $$ = code3(whilecode,STOP,STOP); }
    ;
@@ -96,6 +108,10 @@ expr:  NUMBER {   $$ = code2(constpush, (Inst)$1); }
    | READ '(' VAR ')' { $$ = code2(varread, (Inst)$3); }  
    | BLTIN '(' expr ')' { $$=$3; code2(bltin, (Inst)$1->u.ptr); }  
    | '(' expr ')'  { $$ = $2; }
+   | '|' expr '|'        { $$ = $2; code(magop); }
+   | '[' vector_elements ']' { $$ = code2(buildvec, (Inst)$2); }
+   | expr '@' expr       { code(dotop); }
+   | expr 'X' expr       { code(crossop); }
    | expr   '+'   expr {   code(add); }
    | expr   '-'   expr {   code(sub); }
    | expr   '*'   expr {   code(mul); }
@@ -111,6 +127,9 @@ expr:  NUMBER {   $$ = code2(constpush, (Inst)$1); }
    | expr  AND    expr  { code(and);}
    | expr   OR    expr  { code(or); }
    | NOT expr     { $$= $2; code(not); }
+   ;
+vector_elements: expr { $$ = 1; }
+   | vector_elements ',' expr { $$ = $1 + 1; }
    ;
 prlist: expr               {   code(prexpr); }
    |   STRING              {    $$ = code2(prstr, (Inst)$1); }
@@ -163,12 +182,14 @@ while  ((c=getc(fin)) ==  ' ' ||  c ==   '\t')
 if (c == EOF)
 	return 0; 
 if (c == '.' || isdigit(c)) {   /* número */
-	double d;
-	ungetc(c, fin); 
-	fscanf(fin, "%lf", &d);
-        //printf("val = < %g >", d);
-	yylval.sym = install("", NUMBER, d);
-	return NUMBER; 
+    double d;
+    Vector *v;
+    ungetc(c, fin);
+    fscanf(fin, "%lf", &d);
+    v = creaVector(1);
+    v->vec[0] = d;
+    yylval.sym = install("", NUMBER, v);
+    return NUMBER;
 }
 if (isalpha(c) || c == '_') {//ID
 	Symbol *s;
@@ -183,7 +204,7 @@ if (isalpha(c) || c == '_') {//ID
 	} while ((c=getc(fin)) != EOF && (isalnum(c) || c == '_'));
 	ungetc(c, fin); 
 	*p = '\0'; 
-        
+    if (strcmp(sbuf, "X") == 0) return 'X';    
 	if ((s=lookup(sbuf)) == 0)
        		s=install(sbuf, UNDEF, 0.0); 
         //printf("sbuf = < %s > tipo=(%d)", sbuf, s->type);

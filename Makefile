@@ -1,11 +1,16 @@
-Gram=y.tab.c y.tab.h
+YFLAGS = -d
+OBJS = hoc6.o code.o init.o math.o symbol.o vector_math.o
 
-all: $(Gram)
-	@gcc -o hoc y.tab.c symbol.c code.c init.c math.c -lm
-	@echo Compiled
+hoc: $(OBJS)
+	gcc $(OBJS) -lm -o hoc
 
-$(Gram): hoc6.y
-	@yacc -d hoc6.y
+hoc6.o: hoc.h
+code.o: hoc.h
+init.o: hoc.h
+math.o: hoc.h
+symbol.o: hoc.h
+vector_math.o: hoc.h
+
 clean:
-	@rm -f *.out *.tab.* com hoc yacc.acts yacc.tmp
+	@rm -f *.o *.out *.tab.* com hoc yacc.acts yacc.tmp
 	@echo Clean

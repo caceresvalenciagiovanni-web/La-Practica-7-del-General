@@ -1,22 +1,33 @@
+#ifndef _HOC_H_
+#define _HOC_H_
+
 typedef void (*Inst)(void);
 
+/* 1. Definición nativa del tipo estructural Vector */
+typedef struct Vector {
+   int n;
+   double *vec;
+} Vector;
+
+/* 2. Tabla de símbolos adaptada para objetos vectoriales */
 typedef struct Symbol { /* entrada en la tabla de símbolos */
    char   *name;
    short  type;
    union {
-      double  val;           /* VAR */
-      double  (*ptr)(double);      /* BLTIN */
+      Vector  *val;              /* VAR */
+      double  (*ptr)(double);    /* BLTIN */
       Inst    *defn;             /* FUNCIÓN, PROCEDIMIENTO */
-      char    *str;         /* CADENA */
+      char    *str;              /* CADENA */
    } u;
    struct Symbol   *next;  /* para ligar a otro */
 } Symbol;
 
-Symbol  *install(char *s, int t, double d);
+Symbol  *install(char *s, int t, Vector *d);
 Symbol  *lookup(char *s);
 
+/* 3. Pila de evaluación adaptada a 64 bits con soporte Vectorial */
 typedef union Datum {   /* tipo de la pila del intérprete: */
-   double val;
+   Vector *val;
    Symbol *sym; 
 } Datum;
 
@@ -34,6 +45,12 @@ extern    void prexpr(void), prstr(void);
 extern    void gt(void), lt(void), eq(void), ge(void), le(void), ne(void), and(void), or(void), not(void);
 extern    void ifcode(void), whilecode(void), call(void), arg(void), argassign(void);
 extern    void funcret(void), procret(void);
+
+/* Operaciones de la máquina virtual exclusivas de la calculadora vectorial */
+extern    void magop(void), buildvec(void), dotop(void), crossop(void), forcode(void);
+
 void execerror(char *s, char *t);
 int moreinput(void);
 void execute(Inst *p);
+
+#endif
