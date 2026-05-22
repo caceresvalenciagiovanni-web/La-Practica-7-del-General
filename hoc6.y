@@ -73,7 +73,7 @@ stmt:     expr  { code(pop1); }
            ($1)[2] = (Inst)$6;     /* parte else */
            ($1)[3] = (Inst)$7; } /* fin, si la condición no se cumple */ 
    | '{' stmtlist '}'     { $$ = $2; }
-   | FOR '(' forexpr ';' forexpr ';' forexpr ')' stmt end {
+   | for '(' forexpr ';' forexpr ';' forexpr ')' stmt end {
               ($1)[1] = (Inst)$3;  /* Inicialización */
               ($1)[2] = (Inst)$5;  /* Condición */
               ($1)[3] = (Inst)$7;  /* Incremento */
@@ -109,7 +109,7 @@ expr:  NUMBER {   $$ = code2(constpush, (Inst)$1); }
    | BLTIN '(' expr ')' { $$=$3; code2(bltin, (Inst)$1->u.ptr); }  
    | '(' expr ')'  { $$ = $2; }
    | '|' expr '|'        { $$ = $2; code(magop); }
-   | '[' vector_elements ']' { $$ = code2(buildvec, (Inst)$2); }
+   | '[' vector_elements ']' { $$ = code2(buildvec, (Inst)(long)$2); }
    | expr '@' expr       { code(dotop); }
    | expr 'X' expr       { code(crossop); }
    | expr   '+'   expr {   code(add); }
@@ -206,7 +206,7 @@ if (isalpha(c) || c == '_') {//ID
 	*p = '\0'; 
     if (strcmp(sbuf, "X") == 0) return 'X';    
 	if ((s=lookup(sbuf)) == 0)
-       		s=install(sbuf, UNDEF, 0.0); 
+       		s=install(sbuf, UNDEF, NULL); 
         //printf("sbuf = < %s > tipo=(%d)", sbuf, s->type);
 	yylval.sym = s;
 	return s->type == UNDEF ? VAR : s->type;
@@ -289,6 +289,7 @@ execerror("floating point exception", (char *) 0);
 void init(void);
 void initcode(void);
 void define(Symbol *sp);
+Vector *creaVector(int n);
 int main(int argc, char **argv){  /* hoc6 */ 
    int i;
    void fpecatch();
