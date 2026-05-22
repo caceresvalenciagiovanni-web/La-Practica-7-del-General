@@ -2,7 +2,7 @@
 #include "hoc.h"
 #include <string.h>
 #include <stdio.h>
-
+Vector *creaVector(int n);
 #define code2(c1,c2)     code(c1); code(c2)
 #define code3(c1,c2,c3)  code(c1); code(c2); code(c3)
 
@@ -289,7 +289,6 @@ execerror("floating point exception", (char *) 0);
 void init(void);
 void initcode(void);
 void define(Symbol *sp);
-Vector *creaVector(int n);
 int main(int argc, char **argv){  /* hoc6 */ 
    int i;
    void fpecatch();
