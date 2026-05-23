@@ -23,9 +23,9 @@ Inst       *inst;     /*   instrucción de máquina */
 int        narg;      /*   número de argumentos */
 }
 
+%token     <sym>   NUMBER STRING PRINT VAR BLTIN UNDEF WHILE IF ELSE FOR
 %token     <sym>   FUNCTION PROCEDURE RETURN FUNC PROC READ
 %token     <narg>  ARG
-%token     <sym>   NUMBER STRING PRINT VAR BLTIN UNDEF WHILE IF ELSE FOR
 %type      <inst>  expr stmt asgn prlist stmtlist for forexpr
 %type      <narg>  vector_elements
 %type      <inst>  cond while if begin end
@@ -43,8 +43,7 @@ int        narg;      /*   número de argumentos */
 list:            /* nada */
    | list '\n'
    | list defn '\n'
-   | list asgn '\n'  { puts("list asgn");
-                       code2(pop1, STOP); return 1; }
+   | list asgn '\n'  { code2(pop1, STOP); return 1; }
    | list stmt '\n'  { code(STOP); return 1; }
    | list expr '\n'  { code2(print, STOP); return 1; }
    | list error '\n' { yyerrok; }
@@ -240,8 +239,7 @@ if (c == '"') { /* cadena entre comillas */
 	switch (c) {
 	case '>':                return follow('=', GE, GT);
 	case '<':                return follow('=', LE, LT);
-	case '=':               putchar(c);putchar(c); putchar(c);
-                                 return follow('=', EQ, '=');
+	case '=':                return follow('=', EQ, '=');
 	case '!':                return follow('=', NE, NOT);
 	case '|':                return follow('|', OR, '|');
 	case '&':                return follow('&', AND, '&');
@@ -290,6 +288,13 @@ void init(void);
 void initcode(void);
 void define(Symbol *sp);
 int main(int argc, char **argv){  /* hoc6 */ 
+    printf("--------------------------------------------------------------------------------------------------\n");
+    printf("                                        CALCULADORA VECTORIAL HOC6\n");
+    printf("--------------------------------------------------------------------------------------------------\n");
+    printf("Suma(+) Resta(-) Magnitud(| |) Prod.Cruz(X) Prod.Punto(@) Escalar(*)\n");
+    printf("Uso de if, for y while: if (cond) { ... } else { ... } | while (cond) { ... } | for (cond) { ... }\n");
+    printf("Uso de funciones: func nombre() { ... }\n");
+    printf("--------------------------------------------------------------------------------------------------\n");
    int i;
    void fpecatch();
 progname = argv[0];
@@ -311,7 +316,7 @@ if (gargc-- <= 0)
 if (fin && fin != stdin)
 fclose(fin); 
 infile = *gargv++; 
-printf("arch ent=(%s)\n",infile);
+//printf("arch ent=(%s)\n",infile);
 lineno = 1; 
 if (strcmp(infile, "-") == 0) {
 	fin = stdin;

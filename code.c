@@ -36,11 +36,24 @@ Inst *progp;                 /* Puntero al siguiente lugar libre para generación
 Inst *progbase = prog;
 Inst *pc;                    /* Contador de programa durante la ejecución */
 
+/* --- ESTRUCTURA DE CONTEXTO PARA FUNCIONES (REUBICADA AQUÍ) --- */
+typedef struct Frame {
+    Symbol *sp;
+    Inst *retpc;
+    Datum *argn;
+    int nargs;
+} Frame;
+
+#define NFRAME 100
+Frame frame[NFRAME];
+Frame *fp; /* Apuntador al frame actual de la pila de llamadas */
+
 /* --- INICIALIZACIÓN Y CONTROL DE LA PILA --- */
 
 void initcode() {      
     stackp = stack;
-    progp = prog;
+    progp = progbase;  /* <-- CORRECCIÓN 1: Protege las funciones guardadas */
+    fp = frame;        /* <-- CORRECCIÓN 2: Inicializa la memoria de argumentos evitando el SIGSEGV */
 }
 
 void push(Datum d) {   
@@ -297,19 +310,6 @@ void execute(Inst *p) {
 /* =========================================================
    EXTENSION HOC6: SUBRUTINAS Y GESTION DINAMICA DE MEMORIA
    ========================================================= */
-#include <stdlib.h>
-
-/* Estructura de Contexto (Frame) para el manejo de funciones */
-typedef struct Frame {
-    Symbol *sp;
-    Inst *retpc;
-    Datum *argn;
-    int nargs;
-} Frame;
-
-#define NFRAME 100
-Frame frame[NFRAME];
-Frame *fp; /* Apuntador al frame actual de la pila de llamadas */
 
 void define(Symbol *sp) {
     sp->u.defn = progbase;

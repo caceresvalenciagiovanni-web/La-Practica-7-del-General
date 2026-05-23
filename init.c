@@ -39,14 +39,17 @@ static struct {
 /* --- NUEVO: Diccionario de Palabras Reservadas (Keywords) --- */
 static struct {
     char *name;
-    int kval; /* Guardará el tipo de token (WHILE, IF, etc.) */
+    int  kval;
 } keywords[] = {
-    "if",    IF,
-    "else",  ELSE,
-    "while", WHILE,
-    "for",   FOR,
-    "print", PRINT,
-    0,       0
+    "if",     IF,
+    "else",   ELSE,
+    "while",  WHILE,
+    "for",    FOR,
+    "print",  PRINT,
+    "func",   FUNC,      /* <-- Agregado para HOC6 */
+    "proc",   PROC,      /* <-- Agregado para HOC6 */
+    "return", RETURN,    /* <-- Agregado para HOC6 */
+    0,        0,
 };
 
 /* Función principal de inicialización */

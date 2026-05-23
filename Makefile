@@ -3,6 +3,7 @@ OBJS = hoc6.o code.o init.o math.o symbol.o vector_math.o
 
 hoc: $(OBJS)
 	gcc $(OBJS) -lm -o hoc
+	./hoc
 
 hoc6.o: hoc.h
 code.o: hoc.h
